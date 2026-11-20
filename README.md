@@ -142,7 +142,7 @@ Rezultati AI-ja provjeravani su na sljedeće načine:
 
 ## Utrošeno vrijeme
 
-~3h
+~4h
 
 ## Moguća poboljšanja
 
