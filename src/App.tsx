@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LOCATIONS, MACHINES, ORDERS, SETTINGS, TRUCKS } from "./domain/data";
 import { buildDistanceMatrix } from "./domain/distance";
 import { solve } from "./solver/solve";
@@ -6,7 +6,6 @@ import type { SolveResult } from "./solver/solve";
 import { InputData } from "./ui/InputData";
 import { Results } from "./ui/Results";
 import type { EvaluationContext } from "./validator/types";
-import "./App.css";
 
 const ctx: EvaluationContext = {
   orders: ORDERS,
@@ -15,10 +14,41 @@ const ctx: EvaluationContext = {
   settings: SETTINGS,
 };
 
+type Theme = "dark" | "light";
+const THEME_KEY = "uprent-theme";
+
+function readTheme(): Theme {
+  try {
+    return localStorage.getItem(THEME_KEY) === "light" ? "light" : "dark";
+  } catch {
+    return "dark"; // npr. privatni način rada bez pristupa pohrani
+  }
+}
+
 export default function App() {
+  const [theme, setTheme] = useState<Theme>(readTheme);
   const [result, setResult] = useState<SolveResult | null>(null);
   const [elapsedMs, setElapsedMs] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch {
+      // pohrana nije dostupna, tema vrijedi samo za ovu sesiju
+    }
+  }, [theme]);
+
+  // Nakon izračuna odmah prikaži rezultat
+  useEffect(() => {
+    if (result)
+      resultsRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+  }, [result]);
 
   function run() {
     try {
@@ -33,45 +63,79 @@ export default function App() {
     }
   }
 
+  function clear() {
+    setResult(null);
+    setError(null);
+  }
+
   return (
-    <main className="page">
-      <header>
-        <h1>Optimizacija prijevoza radnih strojeva</h1>
-        <p className="muted">
-          Raspoređuje transportne naloge na dva kamiona i traži raspored s
-          najmanjom ukupnom kilometražom.
-        </p>
+    <>
+      <header className="topbar">
+        <div className="topbar-inner">
+          <div>
+            <h1>Optimizacija prijevoza radnih strojeva</h1>
+            <p className="subtitle">
+              {TRUCKS.length} kamiona · {ORDERS.length} naloga · cilj: najmanja
+              ukupna kilometraža
+            </p>
+          </div>
+          <div className="topbar-actions">
+            <button
+              type="button"
+              className="btn"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            >
+              {theme === "dark" ? "☀ Svijetla tema" : "☾ Tamna tema"}
+            </button>
+            {(result || error) && (
+              <button type="button" className="btn" onClick={clear}>
+                Očisti rezultat
+              </button>
+            )}
+            <button
+              type="button"
+              className="btn btn-primary btn-lg"
+              onClick={run}
+            >
+              ▶ Izračunaj raspored
+            </button>
+          </div>
+        </div>
       </header>
 
-      <InputData
-        settings={SETTINGS}
-        trucks={TRUCKS}
-        locations={LOCATIONS}
-        machines={MACHINES}
-        orders={ORDERS}
-      />
-
-      <div className="actions">
-        <button type="button" onClick={run}>
-          Izračunaj raspored
-        </button>
-      </div>
-
-      {error && (
-        <div className="warning" role="alert">
-          <strong>Greška:</strong> {error}
-        </div>
-      )}
-
-      {result && (
-        <Results
-          result={result}
-          ctx={ctx}
+      <main className="page">
+        <InputData
+          settings={SETTINGS}
           trucks={TRUCKS}
           locations={LOCATIONS}
-          elapsedMs={elapsedMs}
+          machines={MACHINES}
+          orders={ORDERS}
         />
-      )}
-    </main>
+
+        {error && (
+          <div className="warning" role="alert">
+            <strong>Greška:</strong> {error}
+          </div>
+        )}
+
+        {result ? (
+          <div ref={resultsRef} className="results-anchor">
+            <Results
+              result={result}
+              ctx={ctx}
+              trucks={TRUCKS}
+              locations={LOCATIONS}
+              elapsedMs={elapsedMs}
+            />
+          </div>
+        ) : (
+          !error && (
+            <p className="hint">
+              Pritisni „Izračunaj raspored” za prikaz rezultata.
+            </p>
+          )
+        )}
+      </main>
+    </>
   );
 }

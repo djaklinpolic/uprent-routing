@@ -31,11 +31,13 @@ export function Results({ result, ctx, trucks, locations, elapsedMs }: Props) {
   );
 
   return (
-    <section aria-labelledby="rezultat">
-      <h2 id="rezultat">Rezultat</h2>
+    <section className="results" aria-labelledby="rezultat">
+      <h2 id="rezultat" className="section-title">
+        Rezultat
+      </h2>
 
       <div className="summary">
-        <div className="stat">
+        <div className="stat stat-primary">
           <span className="stat-label">Ukupna kilometraža</span>
           <span className="stat-value">{fmtKm(evaluation.totalKm)} km</span>
         </div>
@@ -73,28 +75,47 @@ export function Results({ result, ctx, trucks, locations, elapsedMs }: Props) {
         </div>
       )}
 
-      <div className="routes">
-        {evaluation.routes.map((route, i) => (
-          <RouteCard
-            key={route.truckId}
-            route={route}
-            truck={truckById.get(route.truckId)!}
-            color={ROUTE_COLORS[i % ROUTE_COLORS.length]}
-            baseLabel={label(baseId)}
-            label={label}
-            limitMinutes={limitMinutes}
+      <div className="results-grid">
+        <div className="routes">
+          {evaluation.routes.map((route, i) => (
+            <RouteCard
+              key={route.truckId}
+              route={route}
+              truck={truckById.get(route.truckId)!}
+              color={ROUTE_COLORS[i % ROUTE_COLORS.length]}
+              baseLabel={label(baseId)}
+              label={label}
+              limitMinutes={limitMinutes}
+            />
+          ))}
+        </div>
+
+        <aside className="card map-card">
+          <h3 className="card-title">Karta ruta</h3>
+          <RouteMap
+            locations={locations}
+            baseId={baseId}
+            routes={evaluation.routes}
           />
-        ))}
+          <div className="legend">
+            {evaluation.routes.map((route, i) => (
+              <span key={route.truckId}>
+                <span
+                  className="dot"
+                  style={{ background: ROUTE_COLORS[i % ROUTE_COLORS.length] }}
+                />
+                {truckById.get(route.truckId)!.name}
+              </span>
+            ))}
+            <span>
+              <span className="legend-base" />
+              baza
+            </span>
+          </div>
+        </aside>
       </div>
 
-      <h3>Karta ruta</h3>
-      <RouteMap
-        locations={locations}
-        baseId={baseId}
-        routes={evaluation.routes}
-      />
-
-      <p className="muted">
+      <p className="footnote">
         Egzaktno rješenje (dinamičko programiranje), provjereno neovisnim
         evaluatorom.
         {elapsedMs !== null &&
@@ -121,19 +142,46 @@ function RouteCard({
   label,
   limitMinutes,
 }: RouteCardProps) {
+  const percent = Math.min(100, (route.totalMinutes / limitMinutes) * 100);
+  const tight = percent >= 90;
+
   return (
-    <article className="card">
-      <h3>
-        <span className="dot" style={{ background: color }} />
-        {truck.name}
-      </h3>
-      <p className="muted">
-        {fmtKm(route.totalKm)} km · {route.completedOrderIds.length} naloga ·{" "}
-        {fmtMin(route.totalMinutes)} / {limitMinutes} min
+    <article className="route-card">
+      <div className="route-head">
+        <h3 className="route-title">
+          <span className="dot" style={{ background: color }} />
+          {truck.name}
+        </h3>
+        <span className="route-meta">
+          nosivost {fmtKg(truck.capacityKg)} kg · max. strojeva{" "}
+          {truck.maxMachines}
+        </span>
+      </div>
+      <p className="route-meta">
+        {fmtKm(route.totalKm)} km · {route.completedOrderIds.length} naloga
       </p>
 
+      <div className="meter-label">
+        <span>Radno vrijeme</span>
+        <span>
+          {fmtMin(route.totalMinutes)} / {limitMinutes} min
+        </span>
+      </div>
+      <div
+        className={tight ? "meter tight" : "meter"}
+        role="progressbar"
+        aria-label="Iskorišteno radno vrijeme"
+        aria-valuemin={0}
+        aria-valuemax={limitMinutes}
+        aria-valuenow={Math.round(route.totalMinutes)}
+      >
+        <span style={{ width: `${percent}%` }} />
+      </div>
+
       {route.steps.length === 0 ? (
-        <p>Kamion ostaje u bazi (nema dodijeljenih naloga).</p>
+        <p className="muted">
+          Kamion ostaje u bazi (nema dodijeljenih naloga).
+        </p>
       ) : (
         <div className="table-scroll">
           <table>
@@ -165,7 +213,11 @@ function RouteCard({
                   <td>{s.index + 1}</td>
                   <td>{label(s.locationId)}</td>
                   <td>
-                    {s.stop.action === "pickup" ? "Preuzimanje" : "Isporuka"}
+                    {s.stop.action === "pickup" ? (
+                      <span className="tag tag-pickup">Preuzimanje</span>
+                    ) : (
+                      <span className="tag tag-delivery">Isporuka</span>
+                    )}
                   </td>
                   <td>
                     {s.stop.orderId} · {s.machineId}
