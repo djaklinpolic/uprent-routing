@@ -1,5 +1,7 @@
 # Optimizacija prijevoza radnih strojeva
 
+**Demo:** https://uprent-routing.vercel.app
+
 Prototip web-aplikacije koja raspoređuje transportne naloge na dva kamiona, određuje redoslijed preuzimanja i isporuka za svaki kamion i traži raspored s najmanjom ukupnom kilometražom, uz poštivanje nosivosti, broja strojeva, radnog vremena i obaveznog povratka u bazu.
 
 **Rezultat za zadane podatke:** svih 10 naloga izvršeno, ukupno **200,1 km** (kamion A 37,2 km, kamion B 162,9 km). Rješenje je dokazano optimalno za zadane pretpostavke (vidi [Optimizacijska logika](#optimizacijska-logika)).
