@@ -81,6 +81,54 @@ Strojevi M06–M10 teži su od nosivosti kamiona A, pa ih može prevesti samo ka
 - **Objašnjenja neizvršenih naloga** (`src/solver/explain.test.ts`) i **sučelje** (`src/ui/ui.test.tsx`): prikaz svih ulaznih podataka, ruta oba kamiona i upozorenja.
 - **Ulazni podaci i udaljenosti** (`src/domain/domain.test.ts`): zaokruživanje dionica, simetričnost, konzistentnost naloga.
 
+## Neovisna provjera
+
+Mapa `verification/` sadrži skriptu koja isti zadatak rješava drugom metodom
+(Google OR-Tools, Python), bez ijedne linije koda iz aplikacije. Podaci su ponovno
+prepisani iz PDF-a zadatka, a model je napisan ispočetka.
+
+OR-Tools pronalazi isti rezultat kao aplikacija: **200,1 km**, istu podjelu naloga
+(kamion A: N03, kamion B: ostali nalozi) i istu rutu, osim redoslijeda radnji na
+istoj lokaciji, što ne mijenja kilometražu.
+
+OR-Tools je ovdje pokrenut kao heuristika (lokalna pretraga s vremenskim
+ograničenjem od 60 s), pa sam za sebe ne dokazuje optimum. Optimum dokazuje
+egzaktni algoritam aplikacije, a ova skripta je neovisna potvrda da u implementaciji
+ni u prepisanim podacima nema greške.
+
+### Pokretanje
+
+Potreban je Python 3.10–3.12.
+
+**1. Instalacija Pythona (ako ga nemaš)**
+
+Provjeri imaš li ga: `py --version` (Windows) ili `python3 --version` (macOS/Linux).
+
+- **Windows:** `winget install Python.Python.3.12` ili instalacija s
+  [python.org](https://www.python.org/downloads/), uz obavezno označenu opciju
+  **Add python.exe to PATH**. Nakon instalacije zatvori i ponovno otvori terminal.
+- **macOS:** `brew install python@3.12` ili instalacija s python.org.
+- **Linux:** preko upravitelja paketa, npr. `sudo apt install python3 python3-pip`.
+
+**2. Instalacija OR-Toolsa i pokretanje (iz korijena projekta)**
+
+Windows (PowerShell):
+
+```powershell
+py -m pip install -r verification/requirements.txt
+py verification/verify_ortools.py
+```
+
+macOS / Linux:
+
+```bash
+python3 -m pip install -r verification/requirements.txt
+python3 verification/verify_ortools.py
+```
+
+Izračun traje oko jedne minute. Skripta ispisuje rutu svakog kamiona, kilometražu,
+vrijeme i ukupnu kilometražu uz rezultat aplikacije radi usporedbe.
+
 ## Korištenje AI alata
 
 Za razvoj je korišten Claude (Anthropic) kao sugovornik i generator koda. Rad je tekao korak po korak: model podataka, evaluator, solver, sučelje, dokumentacija. Svaki dio je pokrenut i provjeren prije sljedećeg.
